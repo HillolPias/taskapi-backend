@@ -23,6 +23,23 @@ async def create_task_tool(title: str, project_id: int) -> str:
 
 
 @tool
+async def get_project_by_name_tool(name: str) -> str:
+    """Find a project by its name."""
+
+    async with SessionLocal() as db:
+        result = await db.execute(
+            select(Project).where(Project.name.ilike(f"%{name}%"))
+        )
+
+        project = result.scalar_one_or_none()
+
+        if not project:
+            return f"No project found with name '{name}'."
+
+        return f"Project '{project.name}' has ID {project.id}"
+
+
+@tool
 async def complete_task_tool(task_id: int) -> str:
     """Mark the task with the given ID as completed."""
     async with SessionLocal() as db:
@@ -329,6 +346,7 @@ async def complete_all_tasks_tool(project_id: int) -> str:
 
 tools = [
     create_task_tool,
+    get_project_by_name_tool,
     complete_task_tool,
     list_projects_tool,
     list_tasks_tool,
