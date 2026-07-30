@@ -50,4 +50,58 @@ async def list_projects_tool() -> str:
         return "\n".join(f"- id={p.id}: {p.name}" for p in projects)
 
 
-tools = [create_task_tool, complete_task_tool, list_projects_tool]
+@tool
+async def list_tasks_tool(project_id: int) -> str:
+    """List all tasks under the specified project ID."""
+    async with SessionLocal() as db:
+        result = await db.execute(select(Task).where(Task.project_id == project_id))
+        tasks = result.scalars().all()
+
+        if not tasks:
+            return "No tasks found."
+
+        return "\n".join(f"- {t.title}" for t in tasks)
+
+
+@tool
+async def list_completed_tasks_tool(project_id: int) -> str:
+    """List all completed tasks under the specified project ID."""
+    async with SessionLocal() as db:
+        result = await db.execute(
+            select(Task)
+            .where(Task.project_id == project_id)
+            .where(Task.completed == True)
+        )
+        tasks = result.scalars().all()
+
+        if not tasks:
+            return "No completed tasks found."
+
+        return "\n".join(f"- {t.title}" for t in tasks)
+
+
+@tool
+async def list_uncompleted_tasks_tool(project_id: int) -> str:
+    """List all uncompleted tasks under the specified project ID."""
+    async with SessionLocal() as db:
+        result = await db.execute(
+            select(Task)
+            .where(Task.project_id == project_id)
+            .where(Task.completed == False)
+        )
+        tasks = result.scalars().all()
+
+        if not tasks:
+            return "No uncompleted tasks found."
+
+        return "\n".join(f"- {t.title}" for t in tasks)
+
+
+tools = [
+    create_task_tool,
+    complete_task_tool,
+    list_projects_tool,
+    list_tasks_tool,
+    list_completed_tasks_tool,
+    list_uncompleted_tasks_tool,
+]
