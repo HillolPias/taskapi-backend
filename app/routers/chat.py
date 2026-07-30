@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from openai import APIError, RateLimitError
 
 from app.database import get_db
 from app.llm import llm
@@ -12,7 +13,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 
 def extract_text(content) -> str:
-    """Gemini/LangChain responses can be a plain string or a list of content blocks."""
+    """Handles both plain string responses (OpenAI) and list-of-block responses (some providers)."""
     if isinstance(content, str):
         return content
     if isinstance(content, list):
@@ -28,8 +29,14 @@ def extract_text(content) -> str:
 
 @router.post("/", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    response = await llm.ainvoke(request.message)
-    return ChatResponse(reply=extract_text(response.content))
+    try:
+        response = await llm.ainvoke(request.message)
+        return ChatResponse(reply=extract_text(response.content))
+    except APIError, RateLimitError:
+        raise HTTPException(
+            status_code=503,
+            detail="The AI assistant is temporarily unavailable. Please try again shortly.",
+        )
 
 
 @router.post("/reindex")
@@ -40,27 +47,45 @@ async def reindex(db: AsyncSession = Depends(get_db)):
 
 @router.post("/rag", response_model=ChatResponse)
 async def rag_chat(request: ChatRequest):
-    context_chunks = retrieve_relevant_context(request.message)
-    context_text = "\n".join(f"- {chunk}" for chunk in context_chunks)
+    try:
+        context_chunks = retrieve_relevant_context(request.message)
+        context_text = "\n".join(f"- {chunk}" for chunk in context_chunks)
 
-    prompt = f"""Answer the user's question using ONLY the context below. If the context doesn't contain the answer, say you don't have that information.
+        prompt = f"""Answer the user's question using ONLY the context below. If the context doesn't contain the answer, say you don't have that information.
 
 Context:
 {context_text}
 
 Question: {request.message}"""
 
-    response = await llm.ainvoke(prompt)
-    return ChatResponse(reply=extract_text(response.content))
+        response = await llm.ainvoke(prompt)
+        return ChatResponse(reply=extract_text(response.content))
+    except APIError, RateLimitError:
+        raise HTTPException(
+            status_code=503,
+            detail="The AI assistant is temporarily unavailable. Please try again shortly.",
+        )
 
 
 @router.post("/agent", response_model=ChatResponse)
 async def agent_chat(request: ChatRequest):
-    reply = await run_agent(request.message)
-    return ChatResponse(reply=reply)
+    try:
+        reply = await run_agent(request.message)
+        return ChatResponse(reply=reply)
+    except APIError, RateLimitError:
+        raise HTTPException(
+            status_code=503,
+            detail="The AI assistant is temporarily unavailable. Please try again shortly.",
+        )
 
 
 @router.post("/graph", response_model=ChatResponse)
 async def graph_chat(request: ChatRequest):
-    reply = await run_agent_graph(request.message)
-    return ChatResponse(reply=reply)
+    try:
+        reply = await run_agent_graph(request.message)
+        return ChatResponse(reply=reply)
+    except APIError, RateLimitError:
+        raise HTTPException(
+            status_code=503,
+            detail="The AI assistant is temporarily unavailable. Please try again shortly.",
+        )
