@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from openai import APIError, RateLimitError
 
@@ -89,3 +90,22 @@ async def graph_chat(request: ChatRequest):
             status_code=503,
             detail="The AI assistant is temporarily unavailable. Please try again shortly.",
         )
+
+
+# Add a streaming endpoint
+@router.post("/stream")
+async def chat_stream(request: ChatRequest):
+
+    async def generate():
+        try:
+            async for chunk in llm.astream(request.message):
+                if chunk.content:
+                    yield chunk.content
+
+        except APIError, RateLimitError:
+            yield "Error: The AI assistant is temporarily unavailable."
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/plain",
+    )
