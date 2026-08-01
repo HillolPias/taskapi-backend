@@ -7,5 +7,9 @@ class Settings(BaseSettings):
     database_url: str
     openai_api_key: str
 
+    langchain_tracing_v2: bool = False
+    langchain_api_key: str | None = None
+    langchain_project: str = "ledger-task-api"
+
 
 settings = Settings()
