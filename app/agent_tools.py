@@ -221,9 +221,6 @@ async def move_task_tool(task_id: int, project_id: int) -> str:
         return f"Moved '{task.title}' to project '{project.name}'."
 
 
-from sqlalchemy import func
-
-
 @tool
 async def count_tasks_tool(project_id: int) -> str:
     """Count the number of tasks in a project."""
