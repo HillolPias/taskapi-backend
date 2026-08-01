@@ -8,6 +8,7 @@ if settings.langchain_tracing_v2 and settings.langchain_api_key:
     os.environ["LANGCHAIN_API_KEY"] = settings.langchain_api_key
     os.environ["LANGCHAIN_PROJECT"] = settings.langchain_project
 
+
 llm = ChatOpenAI(
     model="gpt-4o-mini",
     api_key=settings.openai_api_key,

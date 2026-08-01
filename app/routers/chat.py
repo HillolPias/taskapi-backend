@@ -90,3 +90,28 @@ async def graph_chat(request: ChatRequest):
             status_code=503,
             detail="The AI assistant is temporarily unavailable. Please try again shortly.",
         )
+
+
+# Add the streaming endpoint
+@router.post("/rag/stream")
+async def rag_chat_stream(request: ChatRequest):
+    context_chunks = retrieve_relevant_context(request.message)
+    context_text = "\n".join(f"- {chunk}" for chunk in context_chunks)
+
+    prompt = f"""Answer the user's question using ONLY the context below. If the context doesn't contain the answer, say you don't have that information.
+
+Context:
+{context_text}
+
+Question: {request.message}"""
+
+    async def token_generator():
+        try:
+            async for chunk in llm.astream(prompt):
+                text = extract_text(chunk.content)
+                if text:
+                    yield text
+        except APIError, RateLimitError:
+            yield "\n\n[The assistant is temporarily unavailable. Please try again shortly.]"
+
+    return StreamingResponse(token_generator(), media_type="text/plain")
