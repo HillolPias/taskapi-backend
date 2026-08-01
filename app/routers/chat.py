@@ -8,7 +8,7 @@ from app.llm import llm
 from app.schemas import ChatRequest, ChatResponse
 from app.rag import build_index, retrieve_relevant_context
 from app.agent import run_agent
-from app.agent_graph import run_agent_graph
+from app.agent_graph import run_agent_graph, stream_agent_graph
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -111,6 +111,18 @@ Question: {request.message}"""
                 text = extract_text(chunk.content)
                 if text:
                     yield text
+        except APIError, RateLimitError:
+            yield "\n\n[The assistant is temporarily unavailable. Please try again shortly.]"
+
+    return StreamingResponse(token_generator(), media_type="text/plain")
+
+
+@router.post("/graph/stream")
+async def graph_chat_stream(request: ChatRequest):
+    async def token_generator():
+        try:
+            async for token in stream_agent_graph(request.message):
+                yield token
         except APIError, RateLimitError:
             yield "\n\n[The assistant is temporarily unavailable. Please try again shortly.]"
 
