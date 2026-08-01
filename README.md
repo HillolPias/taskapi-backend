@@ -1,7 +1,7 @@
 # Ledger API
 
 🔗 **Live demo:** [taskapi-fronend.vercel.app](https://taskapi-fronend.vercel.app)
-🎨 **Frontend repo:** [taskapi-frontend](https://github.com/HillolPias/taskapi-frontend)
+🎨 **Frontend repo:** [taskapi-frontend](https://github.com/HillolPias/taskapi-fronend)
 
 The backend for **Ledger** — a full-stack task/project manager built around a real AI agent, not a chatbot wrapper.
 
