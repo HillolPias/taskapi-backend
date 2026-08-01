@@ -52,7 +52,7 @@ async def rag_chat(request: ChatRequest):
         context_chunks = retrieve_relevant_context(request.message)
         context_text = "\n".join(f"- {chunk}" for chunk in context_chunks)
 
-        prompt = f"""Answer the user's question using ONLY the context below. If the context doesn't contain the answer, say you don't have that information.
+        prompt = f"""You are answering questions about the user's tasks and projects using the context below. Use the context to answer directly and helpfully — including reasonable inferences (e.g. if asked what projects exist, list the project names mentioned in the context). Only say you don't have the information if the context truly doesn't relate to the question at all.
 
 Context:
 {context_text}
@@ -98,7 +98,7 @@ async def rag_chat_stream(request: ChatRequest):
     context_chunks = retrieve_relevant_context(request.message)
     context_text = "\n".join(f"- {chunk}" for chunk in context_chunks)
 
-    prompt = f"""Answer the user's question using ONLY the context below. If the context doesn't contain the answer, say you don't have that information.
+    prompt = f"""You are answering questions about the user's tasks and projects using the context below. Use the context to answer directly and helpfully — including reasonable inferences (e.g. if asked what projects exist, list the project names mentioned in the context). Only say you don't have the information if the context truly doesn't relate to the question at all.
 
 Context:
 {context_text}
