@@ -19,11 +19,15 @@ async def build_index(db: AsyncSession) -> int:
     """Rebuild the vector index from current Postgres data."""
     result = await db.execute(select(Project).options(selectinload(Project.tasks)))
     projects = result.scalars().all()
+
     documents = []
     for project in projects:
         for task in project.tasks:
             status = "completed" if task.completed else "not completed"
-            text = f"Task {task.title} in project {project.name} is {status}."
+            text = (
+                f"Task '{task.title}' (task id {task.id}) in project '{project.name}' "
+                f"(project id {project.id}) is {status}."
+            )
             documents.append(
                 Document(
                     page_content=text,
