@@ -9,3 +9,7 @@ A LangGraph-orchestrated ReAct agent reasons, selects from 17 tools, and observe
 
 **Stack:** FastAPI · async SQLAlchemy 2.0 · PostgreSQL (Neon) · Alembic migrations · LangChain/LangGraph · OpenAI (`gpt-4o-mini`) · ChromaDB
 **Deployed:** Render
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
