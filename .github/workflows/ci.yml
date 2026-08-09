@@ -54,4 +54,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: yourdockerhubuser/ledger-backend:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/ledger-backend:latest
