@@ -9,6 +9,11 @@ on:
 jobs:
   test-backend:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/testdb
+      TEST_DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/testdb
+      OPENAI_API_KEY: sk-test-dummy-key-not-real
+
     services:
       postgres:
         image: postgres:16
@@ -30,12 +35,9 @@ jobs:
         run: uv sync --frozen
       - name: Run migrations
         run: uv run alembic upgrade head
-        env:
-          DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/testdb
+
       - name: Run tests
         run: uv run pytest
-        env:
-          DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/testdb
 
   build-and-push:
     needs: test-backend
