@@ -57,7 +57,7 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/ledger-backend:latest
 
   deploy:
-    needs: test
+    needs: test-backend
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
