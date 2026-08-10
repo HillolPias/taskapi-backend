@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: taskadmin
+      POSTGRES_PASSWORD: supersecret123
+      POSTGRES_DB: taskdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskadmin -d taskdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://taskadmin:supersecret123@db:5432/taskdb
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - chroma_data:/app/chroma_data
+
+volumes:
+  pgdata:
+  chroma_data:

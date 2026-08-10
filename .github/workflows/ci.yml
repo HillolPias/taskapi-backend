@@ -55,3 +55,11 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/ledger-backend:latest
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Trigger Render deploy
+        run: curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
