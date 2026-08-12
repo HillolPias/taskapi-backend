@@ -33,7 +33,7 @@ async def read_project(project_id: int, db: AsyncSession = Depends(get_db)):
     return project
 
 
-@router.patch("/{project_id}", response_model=ProjectRead, status_code=201)
+@router.patch("/{project_id}", response_model=ProjectRead)
 async def update_project(
     project_id: int, project_in: ProjectUpdate, db: AsyncSession = Depends(get_db)
 ):

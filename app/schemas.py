@@ -15,7 +15,7 @@ class ProjectRead(BaseModel):
 
 
 class ProjectUpdate(BaseModel):
-    name: str | None = None
+    name: str
 
 
 class TaskUpdate(BaseModel):
