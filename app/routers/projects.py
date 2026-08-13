@@ -8,6 +8,7 @@ from app.schemas import (
     ProjectReadWithTasks,
     TaskRead,
     TaskCreateNested,
+    ProjectUpdate,
 )
 from app import crud
 
@@ -27,6 +28,16 @@ async def list_projects(db: AsyncSession = Depends(get_db)):
 @router.get("/{project_id}", response_model=ProjectReadWithTasks)
 async def read_project(project_id: int, db: AsyncSession = Depends(get_db)):
     project = await crud.get_project_with_tasks(db, project_id)
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return project
+
+
+@router.patch("/{project_id}", response_model=ProjectRead)
+async def update_project(
+    project_id: int, project_in: ProjectUpdate, db: AsyncSession = Depends(get_db)
+):
+    project = await crud.update_project(db, project_id, project_in)
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
     return project

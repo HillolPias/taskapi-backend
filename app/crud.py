@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models import Task, Project
-from app.schemas import TaskUpdate, ProjectCreate, TaskCreateNested
+from app.schemas import TaskUpdate, ProjectCreate, TaskCreateNested, ProjectUpdate
 
 
 async def create_project(db: AsyncSession, project_in: ProjectCreate) -> Project:
@@ -17,6 +17,20 @@ async def create_project(db: AsyncSession, project_in: ProjectCreate) -> Project
 async def get_projects(db: AsyncSession) -> list[Project]:
     result = await db.execute(select(Project))
     return list(result.scalars().all())
+
+
+async def update_project(
+    db: AsyncSession, project_id: int, project_in: ProjectUpdate
+) -> Project | None:
+    result = await db.execute(select(Project).where(Project.id == project_id))
+    project = result.scalar_one_or_none()
+    if project is None:
+        return None
+
+    project.name = project_in.name
+    await db.commit()
+    await db.refresh(project)
+    return project
 
 
 async def get_project_with_tasks(db: AsyncSession, project_id: int) -> Project | None:

@@ -14,6 +14,10 @@ class ProjectRead(BaseModel):
     created_at: datetime
 
 
+class ProjectUpdate(BaseModel):
+    name: str
+
+
 class TaskUpdate(BaseModel):
     title: str | None = None
     completed: bool | None = None
