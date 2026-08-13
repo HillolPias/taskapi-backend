@@ -48,3 +48,30 @@ async def test_delete_project_cascades_to_tasks(client):
 
     task_check = await client.get(f"/tasks/{task_id}")
     assert task_check.status_code == 404
+
+
+async def test_update_project_name(client):
+    project_resp = await client.post("/projects/", json={"name": "Old name"})
+    project_id = project_resp.json()["id"]
+
+    response = await client.patch(f"/projects/{project_id}", json={"name": "New name"})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "New name"
+    assert data["id"] == project_id
+
+
+async def test_update_nonexistent_project_returns_404(client):
+    response = await client.patch("/projects/999", json={"name": "Doesn't matter"})
+
+    assert response.status_code == 404
+
+
+async def test_update_project_missing_name_returns_422(client):
+    project_resp = await client.post("/projects/", json={"name": "Old name"})
+    project_id = project_resp.json()["id"]
+
+    response = await client.patch(f"/projects/{project_id}", json={})
+
+    assert response.status_code == 422
