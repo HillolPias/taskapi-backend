@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from pydantic import BaseModel, ConfigDict
 
 
@@ -21,6 +21,7 @@ class ProjectUpdate(BaseModel):
 class TaskUpdate(BaseModel):
     title: str | None = None
     completed: bool | None = None
+    due_date: date | None = None
 
 
 class TaskRead(BaseModel):
@@ -30,6 +31,7 @@ class TaskRead(BaseModel):
     title: str
     completed: bool
     created_at: datetime
+    due_date: date | None
     project_id: int
 
 
@@ -44,6 +46,7 @@ class ProjectReadWithTasks(BaseModel):
 
 class TaskCreateNested(BaseModel):
     title: str
+    due_date: date | None = None
 
 
 class ChatRequest(BaseModel):
