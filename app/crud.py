@@ -50,7 +50,7 @@ async def create_task_for_project(
     if project is None:
         return None
 
-    task = Task(title=task_in.title, project_id=project_id)
+    task = Task(title=task_in.title, project_id=project_id, due_date=task_in.due_date)
     db.add(task)
     await db.commit()
     await db.refresh(task)
