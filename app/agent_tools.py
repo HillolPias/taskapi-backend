@@ -75,19 +75,23 @@ async def list_tasks_tool(
 ) -> str:
     """List tasks with exact, structured data (IDs, completion status, due dates)
     from the database. ALWAYS use this tool — not search_tasks_and_projects_tool —
-    for any question involving due dates, deadlines, or date ranges (e.g. 'what's
-    due this week', 'what's due in 3 days', 'show overdue tasks'), since only this
-    tool has access to due date data.
+    for any question involving due dates, deadlines, or date ranges, since only
+    this tool has access to due date data.
 
-    Filter by project_id (omit to search across all projects), status ('completed',
-    'pending', or 'all'), and optionally due_within_days (e.g. 7 for 'due this week').
+    due_within_days examples:
+    - "due this week" -> due_within_days=7
+    - "due today" -> due_within_days=0
+    - "overdue" / "show overdue tasks" -> due_within_days=0 (returns tasks due
+      today or earlier — this correctly means overdue)
+    - general listing with no date constraint -> omit this parameter entirely
+
+    Filter by project_id (omit to search across all projects) and status
+    ('completed', 'pending', or 'all').
 
     IMPORTANT: due_within_days only returns tasks that HAVE a due date set and
-    fall within that range (including already-overdue tasks). Tasks with no due
-    date are never included in a due_within_days-filtered result — they are not
-    counted as "not due," they simply have no date recorded. The result always
-    reports how many undated tasks exist separately, so you have that context
-    when answering the user."""
+    fall within that range. Tasks with no due date are never included in a
+    due_within_days-filtered result. The result always reports how many undated
+    tasks exist separately."""
     async with SessionLocal() as db:
         query = select(Task)
         if project_id is not None:
