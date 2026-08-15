@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from langchain_core.tools import tool
 from sqlalchemy import select, func
 
@@ -70,10 +71,27 @@ async def list_projects_tool() -> str:
 async def list_tasks_tool(
     project_id: int | None = None,
     status: Literal["all", "completed", "pending"] = "all",
+    due_within_days: int | None = None,
 ) -> str:
-    """List tasks, always including their IDs so they can be referenced in
-    follow-up actions. Filter by project_id (omit to search across all projects)
-    and/or status ('completed', 'pending', or 'all')."""
+    """List tasks with exact, structured data (IDs, completion status, due dates)
+    from the database. ALWAYS use this tool — not search_tasks_and_projects_tool —
+    for any question involving due dates, deadlines, or date ranges, since only
+    this tool has access to due date data.
+
+    due_within_days examples:
+    - "due this week" -> due_within_days=7
+    - "due today" -> due_within_days=0
+    - "overdue" / "show overdue tasks" -> due_within_days=0 (returns tasks due
+      today or earlier — this correctly means overdue)
+    - general listing with no date constraint -> omit this parameter entirely
+
+    Filter by project_id (omit to search across all projects) and status
+    ('completed', 'pending', or 'all').
+
+    IMPORTANT: due_within_days only returns tasks that HAVE a due date set and
+    fall within that range. Tasks with no due date are never included in a
+    due_within_days-filtered result. The result always reports how many undated
+    tasks exist separately."""
     async with SessionLocal() as db:
         query = select(Task)
         if project_id is not None:
@@ -82,13 +100,41 @@ async def list_tasks_tool(
             query = query.where(Task.completed == True)
         elif status == "pending":
             query = query.where(Task.completed == False)
+
+        if due_within_days is not None:
+            cutoff = date.today() + timedelta(days=due_within_days)
+            query = query.where(Task.due_date.isnot(None)).where(
+                Task.due_date <= cutoff
+            )
+
         result = await db.execute(query)
         tasks = result.scalars().all()
+
+        lines = []
         if not tasks:
             return "No matching tasks found."
-        return "\n".join(
-            f"{t.id}. {t.title} ({'✓' if t.completed else '✗'})" for t in tasks
-        )
+        else:
+            for t in tasks:
+                due_str = f", due {t.due_date}" if t.due_date else ""
+                lines.append(
+                    f"{t.id}. {t.title} ({'✓' if t.completed else '✗'}{due_str})"
+                )
+
+        if due_within_days is not None:
+            undated_query = (
+                select(func.count(Task.id))
+                .where(Task.due_date.is_(None))
+                .where(Task.completed == False)
+            )
+            if project_id is not None:
+                undated_query = undated_query.where(Task.project_id == project_id)
+            undated_count = (await db.execute(undated_query)).scalar()
+            if undated_count:
+                lines.append(
+                    f"\n(Note: {undated_count} other incomplete task(s) have no due date set - not included above.)"
+                )
+
+        return "\n".join(lines)
 
 
 @tool
@@ -144,10 +190,14 @@ async def uncomplete_task_tool(task_id: int) -> str:
 
 @tool
 async def search_tasks_tool(keyword: str) -> str:
-    """Exact/partial keyword search over task titles only (case-insensitive
-    substring match). Use this when the user gives a specific word they expect
-    literally in a task title. For broader natural-language questions about
-    status, meaning, or themes, use search_tasks_and_projects_tool instead."""
+    """Semantic/fuzzy search across tasks and projects by MEANING or THEME ONLY
+    (e.g. 'anything backend-related', 'what projects do I have', 'tasks about design').
+
+    DO NOT use this tool for ANY question mentioning: due dates, deadlines, "due
+    this week", "due in X days", "overdue", or any date/time range. This tool has
+    NO due date information whatsoever — it will return incomplete or misleading
+    results for date-based questions. Use list_tasks_tool for ALL date-related
+    queries instead, even if the phrasing sounds like a general search."""
     async with SessionLocal() as db:
         result = await db.execute(select(Task).where(Task.title.ilike(f"%{keyword}%")))
         tasks = result.scalars().all()
@@ -158,9 +208,10 @@ async def search_tasks_tool(keyword: str) -> str:
 
 @tool
 async def search_tasks_and_projects_tool(query: str) -> str:
-    """Semantic search across tasks and projects for natural-language questions
-    (e.g. 'what's still pending', 'what projects do I have', 'anything backend-related').
-    Prefer this over search_tasks_tool unless the user gives an exact keyword or phrase.
+    """Semantic/fuzzy search across tasks and projects by MEANING or THEME
+    (e.g. 'anything backend-related', 'what projects do I have'). Does NOT
+    include due date information — never use this for date/deadline-related
+    questions; use list_tasks_tool instead for those.
     """
     chunks = retrieve_relevant_context(query, k=5)
     if not chunks:
