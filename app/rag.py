@@ -7,11 +7,12 @@ from sqlalchemy.orm import selectinload
 
 from app.models import Project
 from app.llm import embeddings
+from app.config import settings
 
 vector_store = Chroma(
     collection_name="tasks_projects",
     embedding_function=embeddings,
-    persist_directory="./chroma_data",
+    persist_directory=settings.chroma_persist_dir,
 )
 
 
